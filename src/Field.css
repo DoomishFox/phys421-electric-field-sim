@@ -1,7 +1,10 @@
-body {
-    background-color: blue;
+html, body {
+    background-color: gray;
     overflow: hidden;
     margin: 0;
+
+    touch-action: none;
+    -ms-touch-action: none;
 }
 
 .field-container {
