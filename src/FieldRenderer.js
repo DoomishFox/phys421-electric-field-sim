@@ -5,8 +5,8 @@ import './Field.css';
 
 let particleMesh;
 
-let chargePosition;
-let charge;
+let charge1Position;
+let charge1 = 1;
 
 let colors;
 let lines;
@@ -87,10 +87,12 @@ const onSceneReady = scene => {
 
     lines = createFieldLines(100, 10);
     colors = createFieldColors(100, 10);
+
     //let colors = array of colors
     //let lines = 2 dimensional array of points
     fieldMesh = MeshBuilder.CreateLineSystem("fieldLines",
         { colors: colors, lines: lines, updatable: true }, scene)
+    fieldMesh.isPickable = false;
 
     //fieldMesh.color = new Color3(1,0,0);
 
@@ -112,7 +114,14 @@ const onSceneReady = scene => {
  */
 const onRender = scene => {
     // set the charge position to be the same as the mesh representation
-    chargePosition = particleMesh.position;
+    charge1Position = [particleMesh.position.x, particleMesh.position.y, particleMesh.position.z];
+
+    // update the lines array with new values based on electric field equations
+    calculateOnePointFieldLines(lines, charge1, charge1Position, 100, 10);
+
+    // pass this in with an instance of the lines mesh to update
+    fieldMesh = MeshBuilder.CreateLineSystem("fieldLines",
+        { colors: colors, lines: lines, instance: fieldMesh }, scene)
   }
 
 function FieldRenderer() {
@@ -150,13 +159,10 @@ var createFieldLines = function(size, count) {
                             new Vector3(currentXPoint + (lineLength / 2), currentYPoint + (lineLength / 2), currentZPoint + (lineLength / 2))];
 
                 var pointer = (ypos * count * count) + (zpos * count) + xpos;
-                console.log(pointer);
                 xArray[pointer] = xPoint;
             }
         }
     }
-
-    console.log(xArray);
     return xArray;
 }
 
@@ -185,7 +191,174 @@ var createFieldColors = function(size, count) {
             }
         }
     }
-
-    console.log(xArray);
     return xArray;
+}
+
+var calculateOnePointFieldLines = function (xArray, charge1, charge1pos, size, count) {
+    const lineLength = 10000000;
+    const maxLineLength = 4;
+    // ok so we need to create count^3, but lets do this logically
+    // lets start with across the X axis
+
+    for (var ypos = 0; ypos < count; ypos++) {
+
+        var currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
+
+        for (var zpos = 0; zpos < count; zpos++) {
+
+            var currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
+
+            for (var xpos = 0; xpos < count; xpos++) {
+
+                var currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
+
+                // first lets get x_1, y_1, and z_1
+                let x_1 = currentXPoint - charge1pos[0];
+                let y_1 = currentYPoint - charge1pos[1];
+                let z_1 = currentZPoint - charge1pos[2];
+                // next lets calculate r_1_squared
+                let r_1_squared = (x_1 * x_1) + (y_1 * y_1) + (z_1 * z_1);
+                // now lets calculate r_1_inverse
+                // r_1_inverse is 1 / sqrt(r_squared) for which we will use the black magic of Q_rsqrt()
+                let r_1_inverse = Q_rsqrt(r_1_squared);
+                //let r_1_inverse = 1 / Math.sqrt(r_1_squared);
+                // thats everything we need for calculating the field lines from charge 1!
+                let E = getFieldVector(x_1, y_1, z_1, charge1, r_1_squared, r_1_inverse);
+                // now lets scale E_1 with our linelength
+                E[0] = E[0] / lineLength;
+                E[1] = E[1] / lineLength;
+                E[2] = E[2] / lineLength;
+                // lastly we need to divide E_1 by half to center the drawn line
+                E[0] = E[0] / 2;
+                E[1] = E[1] / 2;
+                E[2] = E[2] / 2;
+
+                // now we have vector components of both fields!
+                // lets sum them together in our array
+                var pointer = (ypos * count * count) + (zpos * count) + xpos;
+                let xPoint = xArray[pointer];
+
+                xPoint[0].x = currentXPoint - E[0];
+                xPoint[0].y = currentYPoint - E[1];
+                xPoint[0].z = currentZPoint - E[2];
+                xPoint[3].x = currentXPoint + E[0];
+                xPoint[3].y = currentYPoint + E[1];
+                xPoint[3].z = currentZPoint + E[2];
+            }
+        }
+    }
+}
+
+var calculateTwoPointFieldLines = function (xArray, charge1, charge1pos, charge2, charge2pos, size, count) {
+    const lineLength = 10000000;
+    const maxLineLength = 4;
+    // ok so we need to create count^3, but lets do this logically
+    // lets start with across the X axis
+
+    for (var ypos = 0; ypos < count; ypos++) {
+
+        var currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
+
+        for (var zpos = 0; zpos < count; zpos++) {
+
+            var currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
+
+            for (var xpos = 0; xpos < count; xpos++) {
+
+                var currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
+
+                // first lets get x_1, y_1, and z_1
+                let x_1 = currentXPoint - charge1pos[0];
+                let y_1 = currentYPoint - charge1pos[1];
+                let z_1 = currentZPoint - charge1pos[2];
+                // next lets calculate r_1_squared
+                let r_1_squared = (x_1 * x_1) + (y_1 * y_1) + (z_1 * z_1);
+                // now lets calculate r_1_inverse
+                // r_1_inverse is 1 / sqrt(r_squared) for which we will use the black magic of Q_rsqrt()
+                let r_1_inverse = Q_rsqrt(r_1_squared);
+                // thats everything we need for calculating the field lines from charge 1!
+                let E_1 = getFieldVector(x_1, y_1, z_1, charge1, r_1_squared, r_1_inverse);
+                // now lets scale E_1 with our linelength
+                E_1[0] = E_1[0] / lineLength;
+                E_1[1] = E_1[1] / lineLength;
+                E_1[2] = E_1[2] / lineLength;
+                // lastly we need to divide E_1 by half to center the drawn line
+                E_1[0] = E_1[0] / 2;
+                E_1[1] = E_1[1] / 2;
+                E_1[2] = E_1[2] / 2;
+
+                // now lets do that all over again for E_2
+                // first x_1, y_1, and z_1
+                let x_2 = currentXPoint - charge2pos[0];
+                let y_2 = currentYPoint - charge2pos[1];
+                let z_2 = currentZPoint - charge2pos[2];
+                // next r_2_squared
+                let r_2_squared = (x_2 * x_2) + (y_2 * y_2) + (z_2 * z_2);
+                // now for r_2_inverse
+                let r_2_inverse = Q_rsqrt(r_2_squared);
+                // and finally we can get E_2
+                let E_2 = getFieldVector(x_2, y_2, z_2, charge2, r_2_squared, r_2_inverse);
+                // we need to scale E_2 to match the scaling on E_1
+                E_2[0] = E_2[0] / lineLength;
+                E_2[1] = E_2[1] / lineLength;
+                E_2[2] = E_2[2] / lineLength;
+                // lastly we need to divide E_1 by half to center the drawn line
+                E_2[0] = E_2[0] / 2;
+                E_2[1] = E_2[1] / 2;
+                E_2[2] = E_2[2] / 2;
+
+                // now we can combine the vectors into one so we can do that just once
+                let E = [
+                    E_1[0] + E_2[0],
+                    E_1[1] + E_2[1],
+                    E_1[2] + E_2[2]
+                ];
+
+                // now we have vector components of both fields!
+                // lets sum them together in our array
+                var pointer = (ypos * count * count) + (zpos * count) + xpos;
+                let xPoint = xArray[pointer];
+
+                xPoint[0].x = currentXPoint - E[0];
+                xPoint[0].y = currentYPoint - E[1];
+                xPoint[0].z = currentZPoint - E[2];
+                xPoint[3].x = currentXPoint + E[0];
+                xPoint[3].y = currentYPoint + E[1];
+                xPoint[3].z = currentZPoint + E[2];
+            }
+        }
+    }
+}
+
+// So this was taken from someone much smarter than I on stackoverflow that
+// implemented the fast inverse square root method used in quake iii.
+// it is absolutely disgusting and abuses computers in ways I never thought
+// possible before. I love it.
+// The inline comments from the original programmer and the quake iii source
+// has been preserved because there is no better way to describe what is
+// happening here.
+const bytes = new ArrayBuffer(Float32Array.BYTES_PER_ELEMENT);
+const floatView = new Float32Array(bytes);
+const intView = new Uint32Array(bytes);
+const threehalfs = 1.5;
+function Q_rsqrt(number) {
+    const x2 = number * 0.5;
+    floatView[0] = number;                              // evil floating point bit level hacking
+    intView[0] = 0x5f3759df - ( intView[0] >> 1 );      // What the fuck?
+    let y = floatView[0];
+    y = y * ( threehalfs - ( x2 * y * y ) );            // 1st iteration
+//	y  = y * ( threehalfs - ( x2 * y * y ) );           // 2nd iteration, this can be removed
+    return y;
+}
+
+// I managed to condense the equation for the components of an electric
+// field down to these. No trig, the only tricky but is a square root
+// but because its divided by that we can use the fast inverse square root
+// method and just multiply instead!
+const k = 8987742438;
+function getFieldVector(x_0, y_0, z_0, Q, r_squared, r_inverse) {
+    let E_y = (k) * (y_0 * Q * r_inverse) / (r_squared);
+    let E_z = (k) * (z_0 * Q * r_inverse) / (r_squared);
+    let E_x = (k) * (x_0 * Q * r_inverse) / (r_squared);
+    return [E_x, E_y, E_z];
 }

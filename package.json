@@ -1,6 +1,7 @@
 {
   "name": "mag-app",
   "version": "0.1.0",
+  "homepage": "http://incompetentengineering.com/electricfield",
   "private": true,
   "dependencies": {
     "@babylonjs/core": "^4.2.0",
