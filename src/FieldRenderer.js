@@ -3,10 +3,13 @@ import { ArcRotateCamera, Color3, Color4, Vector3, Mesh, MeshBuilder, StandardMa
 import SceneComponent from './SceneComponent';
 import './Field.css';
 
-let particleMesh;
+import Particle from './Particle';
 
-let charge1Position;
-let charge1 = 1;
+let particleMaterial;
+
+let createNewParticleFlag = false;
+
+let particles = new Array();
 
 let colors;
 let lines;
@@ -38,13 +41,22 @@ const onSceneReady = scene => {
     // set camera panning sensitivity
     camera.panningSensibility = 100;
 
+
     
+    // ******** Create GUI ******** //
+
+    var button = document.createElement("button");
+    button.className = "add-button";
+    button.setAttribute("id", "add-button-id");
+    document.body.appendChild(button);
+
+    button.addEventListener("click", addButton_Click);
 
     // ******** Create Field Bounds ******** //
     // You dont really need to worry about how this section works, it just creates an array of
     // vectors to define the bounds cube based on the inputed size.
-    var vecSize = size / 2;
-    var bounds = Mesh.CreateLines("bounds", [
+    let vecSize = size / 2;
+    let bounds = Mesh.CreateLines("bounds", [
         new Vector3(-vecSize, -vecSize, vecSize), new Vector3(vecSize, -vecSize, vecSize),
         new Vector3(vecSize, -vecSize, -vecSize), new Vector3(vecSize, -vecSize, vecSize),
         new Vector3(vecSize, vecSize, vecSize), new Vector3(vecSize, vecSize, -vecSize),
@@ -60,7 +72,7 @@ const onSceneReady = scene => {
 
     // create an Axis to be rendered with that
     // create the axis lines
-    var axisSize = 10;
+    let axisSize = 10;
     var axisX = Mesh.CreateLines("axisX", [ 
         new Vector3.Zero(), new Vector3(axisSize, 0, 0), new Vector3(axisSize * 0.95, 0.05 * axisSize, 0), 
         new Vector3(axisSize, 0, 0), new Vector3(axisSize * 0.95, -0.05 * axisSize, 0)
@@ -99,25 +111,31 @@ const onSceneReady = scene => {
     // ******** Create First Particle ******** //
 
     // create material for particle mesh
-    var shadelessMat = new StandardMaterial("shadelessMat", scene);
-    shadelessMat.emissiveColor = new Color3(1,1,1);
+    particleMaterial = new StandardMaterial("shadelessMat", scene);
+    particleMaterial.emissiveColor = new Color3(1,1,1);
 
-    // create particle object itself
-    //var particle = Mesh.CreateSphere('particle', 32, 2, scene);
-    particleMesh = MeshBuilder.CreateSphere('particleBox', {diameter: 2}, scene, true);
-    particleMesh.material = shadelessMat;
-    particleMesh.isPickable = true;
+    particles.push(createParticle(scene, 1));
 }
 
 /**
  * Will run on every frame render. Simulation would be triggered here
  */
 const onRender = scene => {
+    // first check to see if we need to create a new particle. this is a
+    // little ugly but the meshes need a reference to the scene and this
+    // seems like the best place to get that
+    if (createNewParticleFlag)
+    {
+        particles.push(createParticle(scene, 1));
+        createNewParticleFlag = false;
+    }
+
     // set the charge position to be the same as the mesh representation
-    charge1Position = [particleMesh.position.x, particleMesh.position.y, particleMesh.position.z];
+    // charge1Position = [particleMesh.position.x, particleMesh.position.y, particleMesh.position.z];
 
     // update the lines array with new values based on electric field equations
-    calculateOnePointFieldLines(lines, charge1, charge1Position, 100, 10);
+    // calculateOnePointFieldLines(lines, charge1, charge1Position, 100, 10);
+    calculateMultiPointFieldLines(lines, particles, 100, 10);
 
     // pass this in with an instance of the lines mesh to update
     fieldMesh = MeshBuilder.CreateLineSystem("fieldLines",
@@ -134,31 +152,51 @@ function FieldRenderer() {
 
 export default FieldRenderer;
 
+// ******** Runtime Functions ******** //
+
+var createParticle = function(scene, charge) {
+    // create particle object itself
+    let particleName = "particle" + particles.length;
+    let particleMesh = MeshBuilder.CreateSphere(particleName, {diameter: 2}, scene, true);
+    particleMesh.material = particleMaterial;
+    particleMesh.isPickable = true;
+    
+    return new Particle(particleMesh, charge);
+}
+
+// ******** Button Event Handlers ******** //
+
+var addButton_Click = function() {
+    createNewParticleFlag = true;
+}
+
+// ******** Field Line Functions ******** //
+
 // create the points array because im sure as heck not gonna do that by hand
 var createFieldLines = function(size, count) {
-    var lineLength = 2;
+    let lineLength = 2;
     // ok so we need to create count^3, but lets do this logically
     // lets start with across the X axis
-    var xArray = new Array();
+    let xArray = new Array();
 
-    for (var ypos = 0; ypos < count; ypos++) {
+    for (let ypos = 0; ypos < count; ypos++) {
 
-        var currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
+        let currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-        for (var zpos = 0; zpos < count; zpos++) {
+        for (let zpos = 0; zpos < count; zpos++) {
 
-            var currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
+            let currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-            for (var xpos = 0; xpos < count; xpos++) {
+            for (let xpos = 0; xpos < count; xpos++) {
 
-                var currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
+                let currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
 
                 let xPoint = [new Vector3(currentXPoint - (lineLength / 2), currentYPoint - (lineLength / 2), currentZPoint - (lineLength / 2)),
                             new Vector3(currentXPoint, currentYPoint, currentZPoint),
                             new Vector3(currentXPoint, currentYPoint, currentZPoint),
                             new Vector3(currentXPoint + (lineLength / 2), currentYPoint + (lineLength / 2), currentZPoint + (lineLength / 2))];
 
-                var pointer = (ypos * count * count) + (zpos * count) + xpos;
+                let pointer = (ypos * count * count) + (zpos * count) + xpos;
                 xArray[pointer] = xPoint;
             }
         }
@@ -169,24 +207,24 @@ var createFieldLines = function(size, count) {
 var createFieldColors = function(size, count) {
     // ok so we need to create count^3, but lets do this logically
     // lets start with across the X axis
-    var xArray = new Array();
+    let xArray = new Array();
 
-    for (var ypos = 0; ypos < count; ypos++) {
+    for (let ypos = 0; ypos < count; ypos++) {
         
-        var currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
+        //var currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-        for (var zpos = 0; zpos < count; zpos++) {
+        for (let zpos = 0; zpos < count; zpos++) {
 
-            var currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
+            //var currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-            for (var xpos = 0; xpos < count; xpos++) {
+            for (let xpos = 0; xpos < count; xpos++) {
 
-                var currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
+                //var currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
 
-                let xPoint = [new Color4(1,1,1,0.5), new Color4(1,1,1,0.5),
-                new Color4(1,0,0,0.5), new Color4(1,0,0,0.5)];
+                let xPoint = [new Color4(1,1,1,1), new Color4(1,1,1,1),
+                            new Color4(1,0,0,1), new Color4(1,0,0,1)];
 
-                var pointer = (ypos * count * count) + (zpos * count) + xpos;
+                let pointer = (ypos * count * count) + (zpos * count) + xpos;
                 xArray[pointer] = xPoint;
             }
         }
@@ -200,17 +238,17 @@ var calculateOnePointFieldLines = function (xArray, charge1, charge1pos, size, c
     // ok so we need to create count^3, but lets do this logically
     // lets start with across the X axis
 
-    for (var ypos = 0; ypos < count; ypos++) {
+    for (let ypos = 0; ypos < count; ypos++) {
 
-        var currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
+        let currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-        for (var zpos = 0; zpos < count; zpos++) {
+        for (let zpos = 0; zpos < count; zpos++) {
 
-            var currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
+            let currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-            for (var xpos = 0; xpos < count; xpos++) {
+            for (let xpos = 0; xpos < count; xpos++) {
 
-                var currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
+                let currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
 
                 // first lets get x_1, y_1, and z_1
                 let x_1 = currentXPoint - charge1pos[0];
@@ -235,7 +273,7 @@ var calculateOnePointFieldLines = function (xArray, charge1, charge1pos, size, c
 
                 // now we have vector components of both fields!
                 // lets sum them together in our array
-                var pointer = (ypos * count * count) + (zpos * count) + xpos;
+                let pointer = (ypos * count * count) + (zpos * count) + xpos;
                 let xPoint = xArray[pointer];
 
                 xPoint[0].x = currentXPoint - E[0];
@@ -249,74 +287,58 @@ var calculateOnePointFieldLines = function (xArray, charge1, charge1pos, size, c
     }
 }
 
-var calculateTwoPointFieldLines = function (xArray, charge1, charge1pos, charge2, charge2pos, size, count) {
+var calculateMultiPointFieldLines = function (xArray, particles, size, count) {
     const lineLength = 10000000;
     const maxLineLength = 4;
     // ok so we need to create count^3, but lets do this logically
     // lets start with across the X axis
 
-    for (var ypos = 0; ypos < count; ypos++) {
+    for (let ypos = 0; ypos < count; ypos++) {
 
-        var currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
+        let currentYPoint = (ypos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-        for (var zpos = 0; zpos < count; zpos++) {
+        for (let zpos = 0; zpos < count; zpos++) {
 
-            var currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
+            let currentZPoint = (zpos * (size / count)) + ((size / count) / 2) -(size / 2);
 
-            for (var xpos = 0; xpos < count; xpos++) {
+            for (let xpos = 0; xpos < count; xpos++) {
 
-                var currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
+                let currentXPoint = (xpos * (size / count)) + ((size / count) / 2) - (size / 2);
 
-                // first lets get x_1, y_1, and z_1
-                let x_1 = currentXPoint - charge1pos[0];
-                let y_1 = currentYPoint - charge1pos[1];
-                let z_1 = currentZPoint - charge1pos[2];
-                // next lets calculate r_1_squared
-                let r_1_squared = (x_1 * x_1) + (y_1 * y_1) + (z_1 * z_1);
-                // now lets calculate r_1_inverse
-                // r_1_inverse is 1 / sqrt(r_squared) for which we will use the black magic of Q_rsqrt()
-                let r_1_inverse = Q_rsqrt(r_1_squared);
-                // thats everything we need for calculating the field lines from charge 1!
-                let E_1 = getFieldVector(x_1, y_1, z_1, charge1, r_1_squared, r_1_inverse);
-                // now lets scale E_1 with our linelength
-                E_1[0] = E_1[0] / lineLength;
-                E_1[1] = E_1[1] / lineLength;
-                E_1[2] = E_1[2] / lineLength;
-                // lastly we need to divide E_1 by half to center the drawn line
-                E_1[0] = E_1[0] / 2;
-                E_1[1] = E_1[1] / 2;
-                E_1[2] = E_1[2] / 2;
+                // this is our total electric field
+                let E = [0, 0, 0];
+                // so lets add the field from all particles in view to it
+                for (let i = 0; i < particles.length; i++)
+                {
+                    // first lets get x_1, y_1, and z_1
+                    let x_1 = currentXPoint - particles[i].x;
+                    let y_1 = currentYPoint - particles[i].y;
+                    let z_1 = currentZPoint - particles[i].z;
+                    // next lets calculate r_1_squared
+                    let r_1_squared = (x_1 * x_1) + (y_1 * y_1) + (z_1 * z_1);
+                    // now lets calculate r_1_inverse
+                    // r_1_inverse is 1 / sqrt(r_squared) for which we will use the black magic of Q_rsqrt()
+                    let r_1_inverse = Q_rsqrt(r_1_squared);
+                    // thats everything we need for calculating the field lines from charge 1!
+                    let E_1 = getFieldVector(x_1, y_1, z_1, particles[i].charge, r_1_squared, r_1_inverse);
+                    // now lets scale E_1 with our linelength
+                    E_1[0] = E_1[0] / lineLength;
+                    E_1[1] = E_1[1] / lineLength;
+                    E_1[2] = E_1[2] / lineLength;
+                    // lastly we need to divide E_1 by half to center the drawn line
+                    E_1[0] = E_1[0] / 2;
+                    E_1[1] = E_1[1] / 2;
+                    E_1[2] = E_1[2] / 2;
 
-                // now lets do that all over again for E_2
-                // first x_1, y_1, and z_1
-                let x_2 = currentXPoint - charge2pos[0];
-                let y_2 = currentYPoint - charge2pos[1];
-                let z_2 = currentZPoint - charge2pos[2];
-                // next r_2_squared
-                let r_2_squared = (x_2 * x_2) + (y_2 * y_2) + (z_2 * z_2);
-                // now for r_2_inverse
-                let r_2_inverse = Q_rsqrt(r_2_squared);
-                // and finally we can get E_2
-                let E_2 = getFieldVector(x_2, y_2, z_2, charge2, r_2_squared, r_2_inverse);
-                // we need to scale E_2 to match the scaling on E_1
-                E_2[0] = E_2[0] / lineLength;
-                E_2[1] = E_2[1] / lineLength;
-                E_2[2] = E_2[2] / lineLength;
-                // lastly we need to divide E_1 by half to center the drawn line
-                E_2[0] = E_2[0] / 2;
-                E_2[1] = E_2[1] / 2;
-                E_2[2] = E_2[2] / 2;
-
-                // now we can combine the vectors into one so we can do that just once
-                let E = [
-                    E_1[0] + E_2[0],
-                    E_1[1] + E_2[1],
-                    E_1[2] + E_2[2]
-                ];
+                    // now we can combine the vectors into one so we can do that just once
+                    E[0] += E_1[0];
+                    E[1] += E_1[1];
+                    E[2] += E_1[2];
+                }
 
                 // now we have vector components of both fields!
                 // lets sum them together in our array
-                var pointer = (ypos * count * count) + (zpos * count) + xpos;
+                let pointer = (ypos * count * count) + (zpos * count) + xpos;
                 let xPoint = xArray[pointer];
 
                 xPoint[0].x = currentXPoint - E[0];
