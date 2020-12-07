@@ -45,16 +45,9 @@ const onSceneReady = scene => {
     
     // ******** Create GUI ******** //
 
-    var uiRoot = document.getElementById("ui-static");
-
-    var button = document.createElement("button");
-    button.className = "add-button";
-    button.textContent = "New Particle"
-    button.setAttribute("id", "add-button-id");
+    var button = document.getElementById("add-button-id");
     button.addEventListener("click", addButton_Click);
-
-
-    uiRoot.appendChild(button);
+    
 
     // ******** Create Field Bounds ******** //
     // You dont really need to worry about how this section works, it just creates an array of

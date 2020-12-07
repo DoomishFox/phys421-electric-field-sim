@@ -31,6 +31,8 @@ html, body {
     position: absolute;
     top: 50px;
     left: 10px;
+
+    color: white;
 }
 
 .add-button {

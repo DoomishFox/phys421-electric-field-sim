@@ -7,8 +7,15 @@ import FieldRenderer from './FieldRenderer';
 ReactDOM.render(
   <React.StrictMode>
     <FieldRenderer />
-    <div id="ui-static" className="ui-static-container"/>
-    <div id="ui-dynamic" className="ui-dynamic-container"/>
+    <div id="ui-static" className="ui-static-container">
+      <button id="add-button-id" className="add-button">New Particle</button>
+    </div>
+    <div id="ui-dynamic" className="ui-dynamic-container">
+      <label id="dynamic-label-id" className="dynamic-label" for="charge-id">Charge: </label>
+      <a >charge value</a>
+      <br/>
+      <input type="range" id="charge-id" className="charge" name="charge" min="-2" max="2" step="0.1"/>
+    </div>
   </React.StrictMode>,
   document.getElementById('root')
 );
