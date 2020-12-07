@@ -123,7 +123,7 @@ const onRender = scene => {
     // seems like the best place to get that
     if (createNewParticleFlag)
     {
-        particles.push(createParticle(scene, 1));
+        particles.push(createParticle(scene, -1));
         createNewParticleFlag = false;
     }
 
@@ -346,33 +346,27 @@ var calculateMultiPointFieldLines = function (xArray, cArray, particles, size, c
                 xPoint[2].y = currentYPoint + E[1];
                 xPoint[2].z = currentZPoint + E[2];
 
-
-                // // FOLLOWING DOESNT WORK
                 
-                // // lets also edit the colors while we're here
-                // // first lets get x_m, y_m, and z_m
-                // let x_m = currentXPoint - E[0];
-                // let y_m = currentXPoint - E[1];
-                // let z_m = currentXPoint - E[2];
-                // // next lets calculate r_m_squared
-                // let r_m_squared = (x_m * x_m) + (y_m * y_m) + (z_m * z_m);
-                // // now lets calculate r_m_inverse is 1 / sqrt(r_m_squared)
-                // let r_m_inverse = Q_rsqrt(r_m_squared);
-                // // using that lets get the final magnitude of the vector
-                // let E_m = r_m_squared * r_m_inverse;
-                // // we're gonna have to divide it by 100, thats just what
-                // // i found from checking manually
-                // E_m /= 100;
-                // // then we clamp that vector between 0.1 and 1 so we can
-                // // use it for opacity
-                // let opacity = clamp(E_m, 0, 1);
+                // lets also edit the colors while we're here
+                // first lets get x_m, y_m, and z_m
+                let x_m = E[0];
+                let y_m = E[1];
+                let z_m = E[2];
+                // next lets calculate r_m_squared
+                let r_m_squared = (x_m * x_m) + (y_m * y_m) + (z_m * z_m);
+                // now lets calculate r_m_inverse is 1 / sqrt(r_m_squared)
+                let r_m_inverse = Q_rsqrt(r_m_squared);
+                // using that lets get the final magnitude of the vector
+                let E_m = r_m_squared * r_m_inverse;
+                // then we clamp that vector between 0.1 and 1 so we can
+                // use it for opacity
+                let opacity = clamp(E_m, 0.1, 1);
 
-                // let cPoint = cArray[pointer];
+                let cPoint = cArray[pointer];
 
-                // cPoint[0].a = opacity;
-                // cPoint[1].a = opacity;
-                // cPoint[2].a = opacity;
-                // cPoint[3].a = opacity;
+                cPoint[0].a = opacity;
+                cPoint[1].a = opacity;
+                cPoint[2].a = opacity;
             }
         }
     }
