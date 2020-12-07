@@ -7,6 +7,8 @@ import FieldRenderer from './FieldRenderer';
 ReactDOM.render(
   <React.StrictMode>
     <FieldRenderer />
+    <div id="ui-static" className="ui-static-container"/>
+    <div id="ui-dynamic" className="ui-dynamic-container"/>
   </React.StrictMode>,
   document.getElementById('root')
 );

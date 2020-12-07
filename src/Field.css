@@ -21,10 +21,17 @@ html, body {
     margin: 0;
 }
 
-.add-button {
+.ui-static-container {
     position: absolute;
     top: 10px;
     left: 10px;
-    width: 50px;
-    height: 25px;
+}
+
+.ui-dynamic-container {
+    position: absolute;
+    top: 50px;
+    left: 10px;
+}
+
+.add-button {
 }
