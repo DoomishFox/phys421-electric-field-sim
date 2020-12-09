@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/electricfield/static/css/main.a1665756.chunk.css",
+    "main.js": "/electricfield/static/js/main.9af89b60.chunk.js",
+    "main.js.map": "/electricfield/static/js/main.9af89b60.chunk.js.map",
+    "runtime-main.js": "/electricfield/static/js/runtime-main.2aa49419.js",
+    "runtime-main.js.map": "/electricfield/static/js/runtime-main.2aa49419.js.map",
+    "static/js/2.221895d0.chunk.js": "/electricfield/static/js/2.221895d0.chunk.js",
+    "static/js/2.221895d0.chunk.js.map": "/electricfield/static/js/2.221895d0.chunk.js.map",
+    "static/js/3.343f81b7.chunk.js": "/electricfield/static/js/3.343f81b7.chunk.js",
+    "static/js/3.343f81b7.chunk.js.map": "/electricfield/static/js/3.343f81b7.chunk.js.map",
+    "index.html": "/electricfield/index.html",
+    "static/css/main.a1665756.chunk.css.map": "/electricfield/static/css/main.a1665756.chunk.css.map",
+    "static/js/2.221895d0.chunk.js.LICENSE.txt": "/electricfield/static/js/2.221895d0.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.2aa49419.js",
+    "static/js/2.221895d0.chunk.js",
+    "static/css/main.a1665756.chunk.css",
+    "static/js/main.9af89b60.chunk.js"
+  ]
+}
