@@ -11,8 +11,9 @@ ReactDOM.render(
       <button id="add-button-id" className="add-button">New Particle</button>
     </div>
     <div id="ui-dynamic" className="ui-dynamic-container">
-      <label id="dynamic-label-id" className="dynamic-label" for="charge-id">Charge: </label>
-      <a >charge value</a>
+      <label className="dynamic-label" htmlFor="charge-id">Charge: </label>
+      <a id="dynamic-label-id">charge value</a>
+      <a > C</a>
       <br/>
       <input type="range" id="charge-id" className="charge" name="charge" min="-2" max="2" step="0.1"/>
     </div>

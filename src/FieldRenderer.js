@@ -5,10 +5,17 @@ import './Field.css';
 
 import Particle from './Particle';
 
+let camera;
+
+let particleUI;
+let chargeDisplay;
+let chargeSlider;
+
 let particleMaterial;
 
 let createNewParticleFlag = false;
 
+let selectedParticle;
 let particles = [];
 
 let colors;
@@ -33,7 +40,7 @@ const onSceneReady = scene => {
     // ******** Create Camera ******** //
 
     // This creates and positions a free camera (non-mesh)
-    var camera = new ArcRotateCamera("camera1", -0.8, 20, size + 50, new Vector3(0, 5, -10), scene);
+    camera = new ArcRotateCamera("camera1", -0.8, 20, size + 50, new Vector3(0, 5, -10), scene);
     // This targets the camera to scene origin
     camera.setTarget(Vector3.Zero());
     // This attaches the camera to the canvas
@@ -47,6 +54,17 @@ const onSceneReady = scene => {
 
     var button = document.getElementById("add-button-id");
     button.addEventListener("click", addButton_Click);
+
+    particleUI = document.getElementById("ui-dynamic");
+    particleUI.style.display = "none";
+
+    chargeDisplay = document.getElementById("dynamic-label-id");
+    chargeDisplay.textContent = "0";
+
+    chargeSlider = document.getElementById("charge-id");
+    chargeSlider.addEventListener("input", chargeSliderChange);
+
+    scene.onPointerPick = onPointerPick;
     
 
     // ******** Create Field Bounds ******** //
@@ -151,6 +169,21 @@ export default FieldRenderer;
 
 // ******** Runtime Functions ******** //
 
+var onPointerPick = function(pointerEvent, pickInfo) {
+    console.log("Picked " + pickInfo.pickedMesh.name);
+
+    // show the particle UI
+    particleUI.style.display = "block";
+
+    // lets get our particle object based on the mesh name
+    selectedParticle = particles.filter( (particle) => particle.name == pickInfo.pickedMesh.name)[0];
+
+    //console.log(selectedParticle);
+
+    chargeDisplay.textContent = selectedParticle.charge;
+    chargeSlider.value = selectedParticle.charge;
+}
+
 var createParticle = function(scene, charge) {
     // create particle object itself
     let particleName = "particle" + particles.length;
@@ -161,10 +194,15 @@ var createParticle = function(scene, charge) {
     return new Particle(particleMesh, charge);
 }
 
-// ******** Button Event Handlers ******** //
+// ******** Event Handlers ******** //
 
 var addButton_Click = function() {
     createNewParticleFlag = true;
+}
+
+var chargeSliderChange = function() {
+    selectedParticle.charge = chargeSlider.value;
+    chargeDisplay.textContent = chargeSlider.value;
 }
 
 // ******** Field Line Functions ******** //

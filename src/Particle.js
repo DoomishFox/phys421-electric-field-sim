@@ -5,6 +5,8 @@ class Particle {
         this.isSelected = false;
     }
 
+    uiElement;
+
     get name() {
         return this.mesh.name;
     }
